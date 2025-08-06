@@ -7,7 +7,7 @@ import string
 import time
 import random
 
-# Block object
+# Block Structure
 class Block:
     def __init__(self, id, timestamp, data, previous_hash, nonce, hash):
         self.id = id
