@@ -62,7 +62,7 @@ class Blockchain(object):
             previous_hash (string): Hash of the previous block. None for genesis block.
 
         Returns:
-            block (obj): 
+            block: The created block
         """
         block = Block(
             id = len(self.chain) + 1,
@@ -71,7 +71,7 @@ class Blockchain(object):
             previous_hash=previous_hash,
             nonce= nonce,
             current_hash=""
-            )
+        )
         
         # Set the block's hash
         block.current_hash = self.hash(block)
@@ -113,12 +113,18 @@ class Blockchain(object):
         Creates a SHA-256 hash for a block. @staticmethod = can be used outside of the 'Blockchain' class.
 
         Args:
-            block (dict): Block
+            block: The current block, used to access its data and previous hash
         
         Returns: 
             hash (str): Hash value
         """
-        pass
+
+        # TODO: Hash more data and explain why in the report
+        # Prepare the string for hashing - transactions+previous_hash
+        hashableString = f"{block.transactions}{block.previous_hash}"
+        
+        # Hash and return the string
+        return hashlib.sha256(hashableString.encode()).hexdigest()
 
     @property
     def last_block(self):
