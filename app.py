@@ -20,22 +20,22 @@ class Block:
         nonce (int): Arbitrary number used to track Proof-of-Work difficulty.
         hash (str): SHA-256 hash of the block contents.
     """
-    def __init__(self, id, timestamp, transactions, previous_hash, nonce, hash):
+    def __init__(self, id, timestamp, transactions, previous_hash, nonce, current_hash):
         self.id = id
         self.timestamp = timestamp
         self.transactions = transactions
         self.previous_hash = previous_hash
         self.nonce = nonce
-        self.hash = hash
+        self.current_hash = current_hash
 
     # Asked ChatGPT to make this look like a block
     def __str__(self):
         lines = [
             f"│ Block ID    : {self.id}",
             f"│ Timestamp   : {self.timestamp}",
-            f"│ Data        : {self.data}",
+            f"│ Transactions: {self.transactions}",
             f"│ Nonce       : {self.nonce}",
-            f"│ Hash        : {self.hash}",
+            f"│ Hash        : {self.current_hash}",
             f"│ Prev. Hash  : {self.previous_hash}",
         ]
         width = max(len(line) for line in lines)
@@ -49,23 +49,64 @@ class Blockchain(object):
     """
     Manages the chain by storing transactions and contains helper methods to add new blocks.
     """
-    def __init___(self):
+    def __init__(self):
         self.chain = []
         self.current_transactions = []
     
-    def new_block(self):
-        # Creates a new block and adds it to the chain
-        pass
-
-    def new_transaction(self, sender, recipient, amount):
+    def new_block(self, nonce, previous_hash=None):
         """
-        Creates a new transaction which will be placed into the next mined Block
+        Creates a new block and adds it to the chain. When it is instantiated (created for the first time - a genesis block is created).
 
         Args:
+            nonce (int): Arbitrary number used to indicate proof-of-work difficulty.
+            previous_hash (string): Hash of the previous block. None for genesis block.
 
+        Returns:
+            block (obj): 
         """
-        pass
+        block = Block(
+            id = len(self.chain) + 1,
+            timestamp = time.time(),
+            transactions= self.current_transactions,
+            previous_hash=previous_hash,
+            nonce= nonce,
+            current_hash=""
+            )
+        
+        # Set the block's hash
+        block.current_hash = self.hash(block)
 
+        # Add it to the chain
+        self.chain.append(block)
+
+        # Clear current transactions
+        self.current_transactions = []
+
+        return block
+
+    def new_transaction(self, sender, receiver, amount):
+        """
+        Creates a new transaction which will be hashed, and placed into the next mined Block
+
+        Args:
+            sender (str): Sender of the transaction.
+            receiver (str): Reciever of the transaction.
+            amount (hash): Sender of the transaction
+
+        Returns:
+            self.last_block['id'] + 1: The ID of the next mined block which will hold the transaction
+        """
+
+        self.current_transactions.append({
+            'sender': sender,
+            'receiver': receiver,
+            'amount': amount
+        })
+
+        return self.last_block['id'] + 1
+
+
+    # TODO: Maybe modify this so it takes current transaction data + previous block hash
     @staticmethod
     def hash(block):
         """
