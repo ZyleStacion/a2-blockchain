@@ -3,9 +3,7 @@
 # RMIT University
 
 import hashlib
-import string
 import time
-import random
 
 # Block Structure
 class Block:
@@ -83,6 +81,24 @@ class Blockchain(object):
         self.current_transactions = []
 
         return block
+    
+    def edit_block(self, block):
+        """
+        Allows a published block to be edited (for demonstration purposes)
+
+        Args:
+            block: The second to last block in the chain.
+        
+        Returns:
+            modified_block (Block): The modified version of the block.
+        """
+
+        # Get the last block
+        block = self.last_block
+
+        # Print the original data
+
+
 
     def new_transaction(self, sender, receiver, amount):
         """
@@ -94,7 +110,7 @@ class Blockchain(object):
             amount (hash): Sender of the transaction
 
         Returns:
-            self.last_block['id'] + 1: The ID of the next mined block which will hold the transaction
+            self.last_block.id + 1: The ID of the next mined block which will hold the transaction
         """
 
         self.current_transactions.append({
@@ -103,28 +119,38 @@ class Blockchain(object):
             'amount': amount
         })
 
-        return self.last_block['id'] + 1
+        return self.last_block.id + 1
 
-
-    # TODO: Maybe modify this so it takes current transaction data + previous block hash
     @staticmethod
     def hash(block):
         """
         Creates a SHA-256 hash for a block. @staticmethod = can be used outside of the 'Blockchain' class.
 
         Args:
-            block: The current block, used to access its data and previous hash
+            block: The current block, used to access its data and previous hash.
         
         Returns: 
-            hash (str): Hash value
+            hash (str): Hash value in hex format.
         """
 
-        # TODO: Hash more data and explain why in the report
-        # Prepare the string for hashing - transactions+previous_hash
-        hashableString = f"{block.transactions}{block.previous_hash}"
+        # Prepare the string for hashing - using all the block data
+        hashableString = f"{block.id}{block.timestamp}{block.transactions}{block.previous_hash}{block.nonce}"
         
         # Hash and return the string
         return hashlib.sha256(hashableString.encode()).hexdigest()
+
+    def verify_hash(self, block):
+        """
+        Verify that the hash stored in the block matches the calculated hash.
+
+        Args:
+            block: The entire block containing the hash to be verified.
+
+        Returns:
+            bool: True if calculated hash matches expected result, False is not.
+        """
+        calculated_hash = self.hash(block)
+        return calculated_hash == block.current_hash
 
     @property
     def last_block(self):
@@ -132,6 +158,31 @@ class Blockchain(object):
         Returns the last block in the chain. @property = turns a method into an attribute so we can modify its values later on.
 
         Returns:
-            block (dict): Last block
+            block: The last block in the chain
         """
-    pass
+        if len(self.chain) == 0:
+            return None
+        else:
+            return self.chain[-1]
+
+### TEST CASES
+
+# Create blockchain
+blockchain = Blockchain()
+
+# Create genesis block
+genesis = blockchain.new_block(nonce=100)
+print(genesis)
+
+# Add a transaction
+blockchain.new_transaction("Alice", "Bob", 50)
+
+# Create second block
+block2 = blockchain.new_block(nonce=200, previous_hash=genesis.current_hash)
+print(block2)
+
+modifiedblock = blockchain.edit_block()
+
+# Hash verification
+print(f"\nGenesis hash valid: {blockchain.verify_hash(genesis)}:")
+print(f"Block 2 hash valid: {blockchain.verify_hash(block2)}")
