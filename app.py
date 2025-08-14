@@ -82,7 +82,7 @@ class Blockchain(object):
 
         return block
     
-    def edit_block(self, block):
+    def edit_block(self):
         """
         Allows a published block to be edited (for demonstration purposes)
 
@@ -93,12 +93,42 @@ class Blockchain(object):
             modified_block (Block): The modified version of the block.
         """
 
-        # Get the last block
-        block = self.last_block
+        # Get the second to last block
+        block = self.chain[-2]
 
-        # Print the original data
+        # Modify the block
+        print(f"Modifying Block ID: {block.id}. It's hash is {block.current_hash}")
+        
+        attributes = [
+            'id',
+            'timestamp',
+            'transactions',
+            'nonce'
+        ]
 
+        for attribute in attributes:
+            current_val = getattr(block, attribute)
+            print(f"\nCurrent {attribute}: {current_val}")
+            new_value = input(f"Enter new {attribute} or press Enter to skip: ")
 
+            # Match field data types
+            if new_value:
+                match attribute:
+                    case 'id' | 'nonce':
+                        setattr(block, attribute, int(new_value))
+                    case 'timestamp':
+                        setattr(block, attribute, float(new_value))
+                    case 'transactions':
+                        # Convert input to list
+                        setattr(block, attribute, eval(new_value))
+                    case _:
+                        setattr(block, attribute, new_value)
+
+        # Calculate new block hash based on modified data
+        block.current_hash = self.hash(block)
+        print(f"\nNew hash: {self.hash(block)}")
+        
+        return block
 
     def new_transaction(self, sender, receiver, amount):
         """
@@ -181,8 +211,20 @@ blockchain.new_transaction("Alice", "Bob", 50)
 block2 = blockchain.new_block(nonce=200, previous_hash=genesis.current_hash)
 print(block2)
 
+print("\n=== 🛫 INITIAL INTEGRITY CHECK ===")
+# Hash verification before modification
+print(f"Genesis hash valid: {blockchain.verify_hash(genesis)}")
+print(f"Block 2 hash valid: {blockchain.verify_hash(block2)}")
+
+print("\n🛠️  Simulating an attacker modifying the block...")
 modifiedblock = blockchain.edit_block()
 
-# Hash verification
-print(f"\nGenesis hash valid: {blockchain.verify_hash(genesis)}:")
+print("\n=== 🕵️  POST-MODIFICATION INTEGRITY CHECK ===")
+# Hash verification after modification
+print(f"Genesis hash valid: {blockchain.verify_hash(modifiedblock)}")
 print(f"Block 2 hash valid: {blockchain.verify_hash(block2)}")
+
+# Check if block2's previous hash matches genesis
+print(f"\nGenesis current hash: {modifiedblock.current_hash}")
+print(f"Block 2 previous hash: {block2.previous_hash}")
+print(f"Do they match? {modifiedblock.current_hash == block2.previous_hash}")
