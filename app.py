@@ -5,7 +5,7 @@
 import hashlib
 import time
 
-# Block Structure
+# Q1. Block Structure
 class Block:
     """
     Represent a single block in our chain.
@@ -41,7 +41,7 @@ class Block:
         bottom = "└" + "─" * (width - 2) + "┘"
         return "\n".join([top] + lines + [bottom])
     
-# Chain integrity and hashing
+# Q2. Chain integrity and hashing
 # Source: https://hackernoon.com/learn-blockchains-by-building-one-117428612f46
 class Blockchain(object):
     """
