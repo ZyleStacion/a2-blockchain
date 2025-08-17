@@ -194,6 +194,32 @@ class Blockchain(object):
             return None
         else:
             return self.chain[-1]
+    
+    def validate_chain(self):
+        """
+        Validates the entire blockchain by checking that each block's hash and its reference to a previous_hash is correct.
+
+        Returns:
+            bool: True if the chain if valid. False if otherwise.
+        """
+        for i in range(len(self.chain)):
+            current_block = self.chain[i]
+
+            # Check the current block's hash is correct
+            if not self.verify_hash(current_block):
+                print(f"Block {current_block.id} has an invalid hash!")
+                return False
+
+            # For non-genesis blocks, also check if the previous hash is correct
+            if i > 0:
+                previous_block = self.chain[i - 1]
+                if current_block.previous_hash != previous_block.current_hash:
+                    print(f"Block {current_block.id} does not match previous block hash!")
+                    return False
+        
+        # No errors were found
+        print(":check: Blockchain is valid!")
+        return True
 
 ### TEST CASES
 
@@ -212,19 +238,12 @@ block2 = blockchain.new_block(nonce=200, previous_hash=genesis.current_hash)
 print(block2)
 
 print("\n=== 🛫 INITIAL INTEGRITY CHECK ===")
-# Hash verification before modification
-print(f"Genesis hash valid: {blockchain.verify_hash(genesis)}")
-print(f"Block 2 hash valid: {blockchain.verify_hash(block2)}")
+# Validate the chain before a modification is made
+blockchain.validate_chain()
 
 print("\n🛠️  Simulating an attacker modifying the block...")
 modifiedblock = blockchain.edit_block()
 
 print("\n=== 🕵️  POST-MODIFICATION INTEGRITY CHECK ===")
-# Hash verification after modification
-print(f"Genesis hash valid: {blockchain.verify_hash(modifiedblock)}")
-print(f"Block 2 hash valid: {blockchain.verify_hash(block2)}")
-
-# Check if block2's previous hash matches genesis
-print(f"\nGenesis current hash: {modifiedblock.current_hash}")
-print(f"Block 2 previous hash: {block2.previous_hash}")
-print(f"Do they match? {modifiedblock.current_hash == block2.previous_hash}")
+# Validate chain after a modification has been made
+blockchain.validate_chain()
