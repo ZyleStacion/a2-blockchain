@@ -62,6 +62,10 @@ class Blockchain(object):
         Returns:
             block: The created block
         """
+
+        if not self.verify_chain():
+            raise Exception("Invalid block, it cannot be added to the chain.")
+
         block = Block(
             id = len(self.chain) + 1,
             timestamp = time.time(),
@@ -97,7 +101,8 @@ class Blockchain(object):
         block = self.chain[-2]
 
         # Modify the block
-        print(f"Modifying Block ID: {block.id}. It's hash is {block.current_hash}")
+        print(f"Modifying Block ID: {block.id}")
+        print(f"Hash: {block.current_hash}")
         
         attributes = ['id', 'timestamp', 'transactions', 'nonce']
 
@@ -204,18 +209,18 @@ class Blockchain(object):
 
             # Check the current block's hash is correct
             if not self.verify_hash(current_block):
-                print(f"Block {current_block.id} has an invalid hash!")
+                print(f"❌ Block {current_block.id} has an invalid hash!")
                 return False
 
             # For non-genesis blocks, also check if the previous hash is correct
             if i > 0:
                 previous_block = self.chain[i - 1]
                 if current_block.previous_hash != previous_block.current_hash:
-                    print(f"Block {current_block.id} does not match previous block hash!")
+                    print(f"❌ Block {current_block.id} does not match previous block hash!")
                     return False
         
         # No errors were found
-        print(":check: Blockchain is valid!")
+        print("✅ Blockchain is valid!")
         return True
 
 ### TEST CASES
