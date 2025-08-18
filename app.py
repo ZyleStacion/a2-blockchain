@@ -90,7 +90,7 @@ class Blockchain(object):
             block: The second to last block in the chain.
         
         Returns:
-            modified_block (Block): The modified version of the block.
+            modified_block (Block): A new, modified version of the block.
         """
 
         # Get the second to last block
@@ -99,16 +99,13 @@ class Blockchain(object):
         # Modify the block
         print(f"Modifying Block ID: {block.id}. It's hash is {block.current_hash}")
         
-        attributes = [
-            'id',
-            'timestamp',
-            'transactions',
-            'nonce'
-        ]
+        attributes = ['id', 'timestamp', 'transactions', 'nonce']
 
         for attribute in attributes:
             current_val = getattr(block, attribute)
             print(f"\nCurrent {attribute}: {current_val}")
+
+            # Edit the attribute
             new_value = input(f"Enter new {attribute} or press Enter to skip: ")
 
             # Match field data types
@@ -195,7 +192,7 @@ class Blockchain(object):
         else:
             return self.chain[-1]
     
-    def validate_chain(self):
+    def verify_chain(self):
         """
         Validates the entire blockchain by checking that each block's hash and its reference to a previous_hash is correct.
 
@@ -239,11 +236,11 @@ print(block2)
 
 print("\n=== 🛫 INITIAL INTEGRITY CHECK ===")
 # Validate the chain before a modification is made
-blockchain.validate_chain()
+blockchain.verify_chain()
 
 print("\n🛠️  Simulating an attacker modifying the block...")
 modifiedblock = blockchain.edit_block()
 
 print("\n=== 🕵️  POST-MODIFICATION INTEGRITY CHECK ===")
 # Validate chain after a modification has been made
-blockchain.validate_chain()
+blockchain.verify_chain()
