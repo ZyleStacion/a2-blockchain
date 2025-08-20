@@ -126,7 +126,7 @@ class BlockchainCLI:
         while True:
             self.show_menu()
             try:
-                choice = input("\nEnter your choice (1-8): ").strip()
+                choice = input("\nEnter your choice (1-9): ").strip()
                 
                 match choice:
                     case '1':
@@ -149,7 +149,7 @@ class BlockchainCLI:
                         print("👋 Goodbye!")
                         sys.exit(0)
                     case _:
-                        print("❌ Invalid choice. Please enter 1-8.")
+                        print("❌ Invalid choice. Please enter 1-9.")
                         
             except KeyboardInterrupt:
                 print("\n👋 Goodbye!")
