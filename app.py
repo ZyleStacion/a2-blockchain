@@ -50,6 +50,7 @@ class Blockchain(object):
     def __init__(self):
         self.chain = []
         self.current_transactions = []
+        self.mempool = []
     
     def new_block(self, nonce, previous_hash=None):
         """
@@ -134,24 +135,28 @@ class Blockchain(object):
 
     def new_transaction(self, sender, receiver, amount):
         """
-        Creates a new transaction which will be hashed, and placed into the next mined Block
+        Verifies and adds a new transaction to the mempool. Only valid transactions are added.
 
         Args:
             sender (str): Sender of the transaction.
-            receiver (str): Reciever of the transaction.
-            amount (hash): Sender of the transaction
+            receiver (str): Receiver of the transaction.
+            amount (int/float): Amount to transfer.
 
         Returns:
-            self.last_block.id + 1: The ID of the next mined block which will hold the transaction
+            int or None: The ID of the next mined block which will hold the transaction, or None if invalid.
         """
-
-        self.current_transactions.append({
+        transaction = {
             'sender': sender,
             'receiver': receiver,
             'amount': amount
-        })
-
-        return self.last_block.id + 1
+        }
+        if self.verify_transaction(transaction):
+            self.mempool.append(transaction)
+            print("✅ Transaction added to mempool.")
+            return self.last_block.id + 1 if self.last_block else 1
+        else:
+            print("❌ Transaction is invalid and was not added.")
+            return None
 
     @staticmethod
     def hash(block):
@@ -222,9 +227,36 @@ class Blockchain(object):
         # No errors were found
         print("✅ Blockchain is valid!")
         return True
+    
+    def verify_transaction(self, transaction):
+        """
+        Verifies that a transaction contains all fields before passing it to the mempool.
+
+        Args:
+            transaction (dict): A transaction to verify, contains sender, receiver and amount.
+        
+        Returns:
+            bool: True if valid, False otherwise.
+        """
+
+        # Source: GitHub Copilot
+        required_fields = ['sender', 'receiver', 'amount']
+        for field in required_fields:
+            if field not in transaction:
+                print(f"❌ Transaction is missing field {field}")
+                return False
+        if not isinstance(transaction['amount'], (int, float)):
+            print("❌ Transaction amount must be a number!")
+            return False
+        if transaction['amount'] <= 0:
+            print("❌ Transaction amount must be positive!")
+            return False
+        if not transaction['sender'] or not transaction['receiver']:
+            print("❌ Sender and receiver must not be empty!")
+            return False
+        return True
 
 ### TEST CASES
-
 # Create blockchain
 blockchain = Blockchain()
 
