@@ -25,7 +25,8 @@ class BlockchainCLI:
         print("5. Verify Chain")
         print("6. Edit Block (Demo)")
         print("7. Show Mempool")
-        print("8. Exit")
+        print("8. Modify Difficulty")
+        print("9. Exit")
         print("="*50)
         
     def create_genesis_block(self):
@@ -34,8 +35,9 @@ class BlockchainCLI:
             return
             
         try:
-            nonce = int(input("Enter nonce for genesis block: "))
-            genesis = self.blockchain.new_block(nonce=nonce)
+            print("⛏️ Mining genesis block...")
+            # Mine genesis block automatically
+            genesis = self.blockchain.new_block(mine=True)
             print("\n🎉 Genesis block created!")
             print(genesis)
         except ValueError:
@@ -68,8 +70,6 @@ class BlockchainCLI:
             
         try:
             previous_hash = self.blockchain.last_block.current_hash
-            
-            # Mine automatically - no need to ask for nonce!
             new_block = self.blockchain.new_block(previous_hash=previous_hash, mine=True)
             print("\n⛏️ Block mined successfully!")
             print(new_block)
@@ -107,7 +107,21 @@ class BlockchainCLI:
             print("-" * 30)
             for i, tx in enumerate(self.blockchain.mempool, 1):
                 print(f"{i}. {tx['sender']} → {tx['receiver']}: {tx['amount']}")
-    
+
+    def modify_difficulty_menu(self):
+        """Menu for difficulty management"""
+        try:
+            print(f"\n🎯 Current difficulty: {self.blockchain.difficulty}")
+            print(f"Target pattern: {'0' * self.blockchain.difficulty}")
+            
+            new_difficulty = int(input("Enter new difficulty (1-6 recommended): "))
+            self.blockchain.modify_difficulty(new_difficulty)
+            
+        except ValueError:
+            print("❌ Please enter a valid integer")
+        except Exception as e:
+            print(f"❌ Error modifying difficulty: {e}")
+
     def run(self):
         while True:
             self.show_menu()
@@ -130,6 +144,8 @@ class BlockchainCLI:
                     case '7':
                         self.show_mempool()
                     case '8':
+                        self.modify_difficulty_menu()
+                    case '9':
                         print("👋 Goodbye!")
                         sys.exit(0)
                     case _:

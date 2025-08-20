@@ -16,6 +16,9 @@ class Blockchain(object):
         self.mempool = []
         # Define mining difficulty
         self.difficulty = 4
+
+    def modify_difficulty(self, difficulty):
+        self.difficulty = difficulty
     
     def new_block(self, nonce=None, previous_hash=None, mine=True):
         """
