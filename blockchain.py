@@ -221,3 +221,13 @@ class Blockchain(object):
             print("❌ Sender and receiver must not be empty!")
             return False
         return True
+    
+    def display_chain(self):
+        """
+        Print the entire blockchain
+        """
+        if len(self.chain) == 0:
+            print("\nBlockchain is empty")
+        else:
+            for block in self.chain:
+                print(block)
