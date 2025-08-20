@@ -14,14 +14,17 @@ class Blockchain(object):
     def __init__(self):
         self.chain = []
         self.mempool = []
+        # Define mining difficulty
+        self.difficulty = 4
     
-    def new_block(self, nonce, previous_hash=None):
+    def new_block(self, nonce=None, previous_hash=None, mine=True):
         """
         Creates a new block and adds it to the chain. When it is instantiated (created for the first time - a genesis block is created).
 
         Args:
             nonce (int): Arbitrary number used to indicate proof-of-work difficulty.
             previous_hash (string): Hash of the previous block. None for genesis block.
+            mine (bool): Whether to mine the block or use the provided nonce
 
         Returns:
             block: The created block
@@ -38,12 +41,16 @@ class Blockchain(object):
             timestamp = time.time(),
             transactions= transaction_for_block,
             previous_hash=previous_hash,
-            nonce= nonce,
+            # Only fill the nonce if its not a genesis block
+            nonce= nonce if nonce is not None else 0,
             current_hash=""
         )
         
-        # Set the block's hash
-        block.current_hash = self.hash(block)
+        if mine:
+            # Mine the block using PoW
+            block = self.mine_block(block)
+        else:
+            block.current_hash = self.hash(block)
 
         # Add it to the chain
         self.chain.append(block)
@@ -53,6 +60,39 @@ class Blockchain(object):
 
         return block
     
+    def mine_block(self, block):
+        """
+        Proof of work mining algorithm to find a valid hash
+        
+        Args:
+            block: The block to mine
+        
+        Returns:
+            block: The mined block with a valid nonce and hash
+        """
+        target = "0" * self.difficulty
+        attempts = 0
+        start_time = time.time()
+
+        print(f"⛏️ Mining block {block.id} with difficulty {self.difficulty}...")
+    
+        while True:
+            # Calculate hash with current nonce
+            block.current_hash = self.hash(block)
+            attempts += 1
+            
+            # Check if hash meets the target requirement
+            if block.current_hash.startswith(target):
+                end_time = time.time()
+                print(f"✅ Found valid hash! Nonce: {block.nonce}, Time: {end_time - start_time:.2f}s")
+                return block
+            
+            # Increment nonce and try again
+            block.nonce += 1
+            
+            if attempts % 50000 == 0:
+                print(f"   Attempt {attempts}: {block.current_hash}")
+
     def edit_block(self):
         """
         Allows a published block to be edited (for demonstration purposes)

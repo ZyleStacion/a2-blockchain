@@ -67,14 +67,12 @@ class BlockchainCLI:
             return
             
         try:
-            nonce = int(input("Enter nonce for new block: "))
             previous_hash = self.blockchain.last_block.current_hash
             
-            new_block = self.blockchain.new_block(nonce=nonce, previous_hash=previous_hash)
+            # Mine automatically - no need to ask for nonce!
+            new_block = self.blockchain.new_block(previous_hash=previous_hash, mine=True)
             print("\n⛏️ Block mined successfully!")
             print(new_block)
-        except ValueError:
-            print("❌ Please enter a valid number for nonce")
         except Exception as e:
             print(f"❌ Error mining block: {e}")
     
