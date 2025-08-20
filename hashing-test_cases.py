@@ -1,5 +1,6 @@
-# q2-test_cases.py
-# Test cases for your blockchain implementation
+# INTE264[1|2] | Blockchain Technology Fundamentals 
+# Created by: Zyle Estacion (s4064846)
+# RMIT University
 
 from app import Blockchain
 import time
@@ -35,37 +36,13 @@ block2 = blockchain.new_block(nonce=200, previous_hash=genesis.current_hash)
 print(block2)
 
 # Initial integrity check
-print("\n=== INITIAL INTEGRITY CHECK ===")
-print(f"Genesis hash valid: {blockchain.verify_hash(genesis)}")
-print(f"Block 2 hash valid: {blockchain.verify_hash(block2)}")
+print("\n=== 🛫 INITIAL INTEGRITY CHECK ===")
+# Validate the chain before a modification is made
+blockchain.verify_chain()
 
-# Simulate an attacker modifying the block
-print("\n🛠️ ===Simulating an attacker modifying the block ===")
-original_amount = block2.transactions[0]['amount']
-original_hash = block2.current_hash
-print(f"Original transaction amount: {original_amount}")
-print(f"Original hash: {original_hash}")
-block2.transactions[0]['amount'] = 999  # Tamper
-print(f"Modified transaction amount: {block2.transactions[0]['amount']}")
-print(f"Hash valid after tampering: {blockchain.verify_hash(block2)}")
+print("\n🛠️ Simulating an attacker modifying the block...")
+modifiedblock = blockchain.edit_block()
 
 # Post modification steps
-print("\n=== POST MODIFICATION STEPS ===")
-# Restore original data
-block2.transactions[0]['amount'] = original_amount
-print(f"After restoring original data - Hash valid: {blockchain.verify_hash(block2)}")
-
-# Tamper again and recalculate hash
-block2.transactions[0]['amount'] = 777
-print(f"After tampering - Hash valid: {blockchain.verify_hash(block2)}")
-block2.current_hash = blockchain.hash(block2)
-print(f"After recalculating hash - Hash valid: {blockchain.verify_hash(block2)}")
-print(f"New hash: {block2.current_hash}")
-
-# Final verification
-print("\n=== FINAL VERIFICATION ===")
-print(f"Genesis hash valid: {blockchain.verify_hash(genesis)}")
-print(f"Block 2 hash valid: {blockchain.verify_hash(block2)}")
-
 print("\n=== FULL CHAIN VERIFICATION ===")
 verify_chain_integrity(blockchain)

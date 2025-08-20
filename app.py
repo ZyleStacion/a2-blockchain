@@ -2,282 +2,147 @@
 # Created by: Zyle Estacion (s4064846)
 # RMIT University
 
-import hashlib
-import time
+"""
+CLI interface for interacting with the blockchain.
+"""
 
-# Q1. Block Structure
-class Block:
-    """
-    Represent a single block in our chain.
+from blockchain import Blockchain
+import sys
 
-    Attributes:
-        id (int): Unique block ID.
-        timestamp (str): Time of block creation.
-        transactions (dict): A list of transactions containing transaction details.
-        previous_hash (str): SHA-256 hash of the previous block in the chain.
-        nonce (int): Arbitrary number used to track Proof-of-Work difficulty.
-        hash (str): SHA-256 hash of the block contents.
-    """
-    def __init__(self, id, timestamp, transactions, previous_hash, nonce, current_hash):
-        self.id = id
-        self.timestamp = timestamp
-        self.transactions = transactions
-        self.previous_hash = previous_hash
-        self.nonce = nonce
-        self.current_hash = current_hash
-
-    # Asked ChatGPT to make this look like a block
-    def __str__(self):
-        lines = [
-            f"│ Block ID    : {self.id}",
-            f"│ Timestamp   : {self.timestamp}",
-            f"│ Transactions: {self.transactions}",
-            f"│ Nonce       : {self.nonce}",
-            f"│ Hash        : {self.current_hash}",
-            f"│ Prev. Hash  : {self.previous_hash}",
-        ]
-        width = max(len(line) for line in lines)
-        top = "┌" + "─" * (width - 2) + "┐"
-        bottom = "└" + "─" * (width - 2) + "┘"
-        return "\n".join([top] + lines + [bottom])
-    
-# Q2. Chain integrity and hashing
-# Source: https://hackernoon.com/learn-blockchains-by-building-one-117428612f46
-class Blockchain(object):
-    """
-    Manages the chain by storing transactions and contains helper methods to add new blocks.
-    """
+class BlockchainCLI:
     def __init__(self):
-        self.chain = []
-        self.current_transactions = []
-        self.mempool = []
+        self.blockchain = Blockchain()
+        
+    def show_menu(self):
+        print("\n" + "="*50)
+        print("🔗 BLOCKCHAIN CLI - INTE264 Assignment 2")
+        print("Created by: Zyle Estacion (s4064846)")
+        print("="*50)
+        print("1. Create Genesis Block")
+        print("2. Add Transaction")
+        print("3. Mine Block")
+        print("4. Display Blockchain")
+        print("5. Verify Chain")
+        print("6. Edit Block (Demo)")
+        print("7. Show Mempool")
+        print("8. Exit")
+        print("="*50)
+        
+    def create_genesis_block(self):
+        if len(self.blockchain.chain) > 0:
+            print("❌ Genesis block already exists!")
+            return
+            
+        try:
+            nonce = int(input("Enter nonce for genesis block: "))
+            genesis = self.blockchain.new_block(nonce=nonce)
+            print("\n🎉 Genesis block created!")
+            print(genesis)
+        except ValueError:
+            print("❌ Please enter a valid number for nonce")
+        except Exception as e:
+            print(f"❌ Error creating genesis block: {e}")
     
-    def new_block(self, nonce, previous_hash=None):
-        """
-        Creates a new block and adds it to the chain. When it is instantiated (created for the first time - a genesis block is created).
-
-        Args:
-            nonce (int): Arbitrary number used to indicate proof-of-work difficulty.
-            previous_hash (string): Hash of the previous block. None for genesis block.
-
-        Returns:
-            block: The created block
-        """
-
-        if not self.verify_chain():
-            raise Exception("Invalid block, it cannot be added to the chain.")
-
-        block = Block(
-            id = len(self.chain) + 1,
-            timestamp = time.time(),
-            transactions= self.current_transactions,
-            previous_hash=previous_hash,
-            nonce= nonce,
-            current_hash=""
-        )
-        
-        # Set the block's hash
-        block.current_hash = self.hash(block)
-
-        # Add it to the chain
-        self.chain.append(block)
-
-        # Clear current transactions
-        self.current_transactions = []
-
-        return block
+    def add_transaction(self):
+        try:
+            sender = input("Enter sender: ").strip()
+            receiver = input("Enter receiver: ").strip()
+            amount = float(input("Enter amount: "))
+            
+            result = self.blockchain.new_transaction(sender, receiver, amount)
+            if result:
+                print(f"📝 Transaction will be included in block {result}")
+        except ValueError:
+            print("❌ Please enter a valid amount")
+        except Exception as e:
+            print(f"❌ Error adding transaction: {e}")
     
-    def edit_block(self):
-        """
-        Allows a published block to be edited (for demonstration purposes)
-
-        Args:
-            block: The second to last block in the chain.
-        
-        Returns:
-            modified_block (Block): A new, modified version of the block.
-        """
-
-        # Get the second to last block
-        block = self.chain[-2]
-
-        # Modify the block
-        print(f"Modifying Block ID: {block.id}")
-        print(f"Hash: {block.current_hash}")
-        
-        attributes = ['id', 'timestamp', 'transactions', 'nonce']
-
-        for attribute in attributes:
-            current_val = getattr(block, attribute)
-            print(f"\nCurrent {attribute}: {current_val}")
-
-            # Edit the attribute
-            new_value = input(f"Enter new {attribute} or press Enter to skip: ")
-
-            # Match field data types
-            if new_value:
-                match attribute:
-                    case 'id' | 'nonce':
-                        setattr(block, attribute, int(new_value))
-                    case 'timestamp':
-                        setattr(block, attribute, float(new_value))
-                    case 'transactions':
-                        # Convert input to list
-                        setattr(block, attribute, eval(new_value))
-                    case _:
-                        setattr(block, attribute, new_value)
-
-        # Calculate new block hash based on modified data
-        block.current_hash = self.hash(block)
-        print(f"\nNew hash: {self.hash(block)}")
-        
-        return block
-
-    def new_transaction(self, sender, receiver, amount):
-        """
-        Verifies and adds a new transaction to the mempool. Only valid transactions are added.
-
-        Args:
-            sender (str): Sender of the transaction.
-            receiver (str): Receiver of the transaction.
-            amount (int/float): Amount to transfer.
-
-        Returns:
-            int or None: The ID of the next mined block which will hold the transaction, or None if invalid.
-        """
-        transaction = {
-            'sender': sender,
-            'receiver': receiver,
-            'amount': amount
-        }
-        if self.verify_transaction(transaction):
-            self.mempool.append(transaction)
-            print("✅ Transaction added to mempool.")
-            return self.last_block.id + 1 if self.last_block else 1
-        else:
-            print("❌ Transaction is invalid and was not added.")
-            return None
-
-    @staticmethod
-    def hash(block):
-        """
-        Creates a SHA-256 hash for a block. @staticmethod = can be used outside of the 'Blockchain' class.
-
-        Args:
-            block: The current block, used to access its data and previous hash.
-        
-        Returns: 
-            hash (str): Hash value in hex format.
-        """
-
-        # Prepare the string for hashing - using all the block data
-        hashableString = f"{block.id}{block.timestamp}{block.transactions}{block.previous_hash}{block.nonce}"
-        
-        # Hash and return the string
-        return hashlib.sha256(hashableString.encode()).hexdigest()
-
-    def verify_hash(self, block):
-        """
-        Verify that the hash stored in the block matches the calculated hash.
-
-        Args:
-            block: The entire block containing the hash to be verified.
-
-        Returns:
-            bool: True if calculated hash matches expected result, False is not.
-        """
-        calculated_hash = self.hash(block)
-        return calculated_hash == block.current_hash
-
-    @property
-    def last_block(self):
-        """
-        Returns the last block in the chain. @property = turns a method into an attribute so we can modify its values later on.
-
-        Returns:
-            block: The last block in the chain
-        """
-        if len(self.chain) == 0:
-            return None
-        else:
-            return self.chain[-1]
+    def mine_block(self):
+        if len(self.blockchain.chain) == 0:
+            print("❌ Create genesis block first!")
+            return
+            
+        if len(self.blockchain.mempool) == 0:
+            print("❌ No transactions in mempool to mine!")
+            return
+            
+        try:
+            nonce = int(input("Enter nonce for new block: "))
+            previous_hash = self.blockchain.last_block.current_hash
+            
+            new_block = self.blockchain.new_block(nonce=nonce, previous_hash=previous_hash)
+            print("\n⛏️ Block mined successfully!")
+            print(new_block)
+        except ValueError:
+            print("❌ Please enter a valid number for nonce")
+        except Exception as e:
+            print(f"❌ Error mining block: {e}")
+    
+    def display_blockchain(self):
+        self.blockchain.display_chain()
     
     def verify_chain(self):
-        """
-        Validates the entire blockchain by checking that each block's hash and its reference to a previous_hash is correct.
-
-        Returns:
-            bool: True if the chain if valid. False if otherwise.
-        """
-        for i in range(len(self.chain)):
-            current_block = self.chain[i]
-
-            # Check the current block's hash is correct
-            if not self.verify_hash(current_block):
-                print(f"❌ Block {current_block.id} has an invalid hash!")
-                return False
-
-            # For non-genesis blocks, also check if the previous hash is correct
-            if i > 0:
-                previous_block = self.chain[i - 1]
-                if current_block.previous_hash != previous_block.current_hash:
-                    print(f"❌ Block {current_block.id} does not match previous block hash!")
-                    return False
-        
-        # No errors were found
-        print("✅ Blockchain is valid!")
-        return True
+        print("\n🔍 Verifying blockchain integrity...")
+        self.blockchain.verify_chain()
     
-    def verify_transaction(self, transaction):
-        """
-        Verifies that a transaction contains all fields before passing it to the mempool.
-
-        Args:
-            transaction (dict): A transaction to verify, contains sender, receiver and amount.
+    def edit_block_demo(self):
+        print("\n🛠️ Block Editing Demo (Security Test)")
+        print("This will modify a block to demonstrate chain integrity detection")
         
-        Returns:
-            bool: True if valid, False otherwise.
-        """
+        if len(self.blockchain.chain) < 2:
+            print("❌ Need at least 2 blocks to demonstrate editing")
+            return
+            
+        print("\nBefore modification:")
+        self.blockchain.verify_chain()
+        
+        self.blockchain.edit_block()
+        
+        print("\nAfter modification:")
+        self.blockchain.verify_chain()
+    
+    def show_mempool(self):
+        if len(self.blockchain.mempool) == 0:
+            print("📝 Mempool is empty")
+        else:
+            print(f"\n📝 MEMPOOL ({len(self.blockchain.mempool)} transactions)")
+            print("-" * 30)
+            for i, tx in enumerate(self.blockchain.mempool, 1):
+                print(f"{i}. {tx['sender']} → {tx['receiver']}: {tx['amount']}")
+    
+    def run(self):
+        while True:
+            self.show_menu()
+            try:
+                choice = input("\nEnter your choice (1-8): ").strip()
+                
+                match choice:
+                    case '1':
+                        self.create_genesis_block()
+                    case '2':
+                        self.add_transaction()
+                    case '3':
+                        self.mine_block()
+                    case '4':
+                        self.display_blockchain()
+                    case '5':
+                        self.verify_chain()
+                    case '6':
+                        self.edit_block_demo()
+                    case '7':
+                        self.show_mempool()
+                    case '8':
+                        print("👋 Goodbye!")
+                        sys.exit(0)
+                    case _:
+                        print("❌ Invalid choice. Please enter 1-8.")
+                        
+            except KeyboardInterrupt:
+                print("\n👋 Goodbye!")
+                sys.exit(0)
+            except Exception as e:
+                print(f"❌ An error occurred: {e}")
 
-        # Source: GitHub Copilot
-        required_fields = ['sender', 'receiver', 'amount']
-        for field in required_fields:
-            if field not in transaction:
-                print(f"❌ Transaction is missing field {field}")
-                return False
-        if not isinstance(transaction['amount'], (int, float)):
-            print("❌ Transaction amount must be a number!")
-            return False
-        if transaction['amount'] <= 0:
-            print("❌ Transaction amount must be positive!")
-            return False
-        if not transaction['sender'] or not transaction['receiver']:
-            print("❌ Sender and receiver must not be empty!")
-            return False
-        return True
-
-### TEST CASES
-# Create blockchain
-blockchain = Blockchain()
-
-# Create genesis block
-genesis = blockchain.new_block(nonce=100)
-print(genesis)
-
-# Add a transaction
-blockchain.new_transaction("Alice", "Bob", 50)
-
-# Create second block
-block2 = blockchain.new_block(nonce=200, previous_hash=genesis.current_hash)
-print(block2)
-
-print("\n=== 🛫 INITIAL INTEGRITY CHECK ===")
-# Validate the chain before a modification is made
-blockchain.verify_chain()
-
-print("\n🛠️  Simulating an attacker modifying the block...")
-modifiedblock = blockchain.edit_block()
-
-print("\n=== 🕵️  POST-MODIFICATION INTEGRITY CHECK ===")
-# Validate chain after a modification has been made
-blockchain.verify_chain()
+if __name__ == "__main__":
+    cli = BlockchainCLI()
+    cli.run()
