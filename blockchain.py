@@ -142,7 +142,7 @@ class Blockchain(object):
         
         return block
 
-    def new_transaction(self, sender, receiver, amount):
+    def new_transaction(self, sender, receiver, amount, spent_transactions=None):
         """
         Verifies and adds a new transaction to the mempool. Only valid transactions are added.
 
@@ -150,14 +150,22 @@ class Blockchain(object):
             sender (str): Sender of the transaction.
             receiver (str): Receiver of the transaction.
             amount (int/float): Amount to transfer.
+            spent_transactions (list): List of transaction IDs that have been completed.
 
         Returns:
             int or None: The ID of the next mined block which will hold the transaction, or None if invalid.
         """
+
+        # Generate unique transaction ID
+        transaction_id = hashlib.sha256(f"{sender}{receiver}{amount}{time.time()}".encode()).hexdigest()
+
         transaction = {
+            'transaction_id': transaction_id,
             'sender': sender,
             'receiver': receiver,
-            'amount': amount
+            'amount': amount,
+            'spent_transactions': spent_transactions or [],
+            'transaction_time': time.time()
         }
         if self.verify_transaction(transaction):
             self.mempool.append(transaction)
@@ -265,6 +273,10 @@ class Blockchain(object):
             return False
         return True
     
+        # Double-spend prevention
+        if not check_double_spending(transaction):
+            return False
+        
     def display_chain(self):
         """
         Print the entire blockchain
