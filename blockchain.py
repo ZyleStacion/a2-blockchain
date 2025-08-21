@@ -247,7 +247,7 @@ class Blockchain(object):
     
     def verify_transaction(self, transaction):
         """
-        Verifies that a transaction contains all fields before passing it to the mempool.
+        Verifies that a transaction contains all fields and prevents duplicates/double spending.
 
         Args:
             transaction (dict): A transaction to verify, contains sender, receiver and amount.
@@ -256,8 +256,8 @@ class Blockchain(object):
             bool: True if valid, False otherwise.
         """
 
-        # Source: GitHub Copilot
-        required_fields = ['sender', 'receiver', 'amount']
+        # Source: GitHub Copilot (Claude Sonnet 4)
+        required_fields = ['transaction_id', 'sender', 'receiver', 'amount', 'spent_transactions']
         for field in required_fields:
             if field not in transaction:
                 print(f"❌ Transaction is missing field {field}")
@@ -276,11 +276,22 @@ class Blockchain(object):
     
         # Search for duplicate transaction IDs
         all_transaction_ids = set()
-
+        
+        # Collect all transaction IDs from blockchain
         for block in self.chain:
-            for transaction in block.transactions:
-                if isinstance(transaction, dict) and 'transaction_id' in transaction:
-                    all_transaction_ids.add(transaction['transaction_id'])
+            for tx in block.transactions:
+                if isinstance(tx, dict) and 'transaction_id' in tx:
+                    all_transaction_ids.add(tx['transaction_id'])
+        
+        # Collect all transaction IDs from mempool
+        for tx in self.mempool:
+            if 'transaction_id' in tx:
+                all_transaction_ids.add(tx['transaction_id'])
+        
+        # Check if this transaction ID already exists
+        if transaction['transaction_id'] in all_transaction_ids:
+            print(f"❌ Transaction ID {transaction['transaction_id'][:8]}... already exists!")
+            return False
 
         # Double-spend prevention
         if not self.check_double_spending(transaction):
