@@ -262,6 +262,8 @@ class Blockchain(object):
             if field not in transaction:
                 print(f"❌ Transaction is missing field {field}")
                 return False
+
+        # Match data types
         if not isinstance(transaction['amount'], (int, float)):
             print("❌ Transaction amount must be a number!")
             return False
@@ -271,12 +273,46 @@ class Blockchain(object):
         if not transaction['sender'] or not transaction['receiver']:
             print("❌ Sender and receiver must not be empty!")
             return False
-        return True
     
+        # Search for duplicate transaction IDs
+        all_transaction_ids = set()
+
+        for block in self.chain:
+            for transaction in block.transactions:
+                if isinstance(transaction, dict) and 'transaction_id' in transaction:
+                    all_transaction_ids.add(transaction['transaction_id'])
+
         # Double-spend prevention
-        if not check_double_spending(transaction):
+        if not self.check_double_spending(transaction):
             return False
         
+        return True
+
+    # Source: GitHub CoPilot
+    def check_double_spending(self, transaction):
+        """
+        Prevents double spending by checking if spent_transactions are already used.
+        """
+        used_txs = set()
+        
+        # Collect all spent transaction IDs from the blockchain
+        for block in self.chain:
+            for tx in block.transactions:
+                if isinstance(tx, dict) and 'spent_transactions' in tx:
+                    used_txs.update(tx['spent_transactions'])
+        
+        # Collect all spent transaction IDs from mempool
+        for pending_tx in self.mempool:
+            if 'spent_transactions' in pending_tx:
+                used_txs.update(pending_tx['spent_transactions'])
+        
+        # Check if this transaction tries to spend already used transactions
+        for spent_tx in transaction['spent_transactions']:
+            if spent_tx in used_txs:
+                print(f"❌ Double spending detected! Transaction {spent_tx[:8]}... already spent!")
+                return False
+        
+        return True
     def display_chain(self):
         """
         Print the entire blockchain
