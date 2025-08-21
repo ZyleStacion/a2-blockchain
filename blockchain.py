@@ -5,6 +5,8 @@
 import hashlib
 import time
 from block import Block
+import pickle
+import os
 
 # Source: https://hackernoon.com/learn-blockchains-by-building-one-117428612f46
 class Blockchain(object):
@@ -324,6 +326,7 @@ class Blockchain(object):
                 return False
         
         return True
+    
     def display_chain(self):
         """
         Print the entire blockchain
@@ -333,3 +336,99 @@ class Blockchain(object):
         else:
             for block in self.chain:
                 print(block)
+
+    def save_blockchain(self, filename="blockchain.pkl"):
+        """
+        Saves the entire blockchain to a file using pickle in the saves/ directory.
+        
+        Args:
+            filename (str): Name of the file to save to
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Create saves directory if it doesn't exist
+            saves_dir = "saves"
+            os.makedirs(saves_dir, exist_ok=True)
+            
+            # Create full file path
+            filepath = os.path.join(saves_dir, filename)
+            
+            # Create data structure to save
+            blockchain_data = {
+                'chain': self.chain,
+                'mempool': self.mempool,
+                'difficulty': self.difficulty
+            }
+            
+            with open(filepath, 'wb') as f:
+                pickle.dump(blockchain_data, f)
+            
+            print(f"✅ Blockchain saved to {filepath}")
+            print(f"📊 Saved {len(self.chain)} blocks and {len(self.mempool)} pending transactions")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error saving blockchain: {e}")
+            return False
+        
+    def load_blockchain(self, filename="blockchain.pkl"):
+        """
+        Loads the entire blockchain from a file using pickle from the saves/ directory.
+        
+        Args:
+            filename (str): Name of the file to load from
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Create full file path in saves directory
+            saves_dir = "saves"
+            filepath = os.path.join(saves_dir, filename)
+            
+            if not os.path.exists(filepath):
+                print(f"❌ File {filepath} does not exist")
+                return False
+            
+            with open(filepath, 'rb') as f:
+                blockchain_data = pickle.load(f)
+            
+            # Restore blockchain state
+            self.chain = blockchain_data.get('chain', [])
+            self.mempool = blockchain_data.get('mempool', [])
+            self.difficulty = blockchain_data.get('difficulty', 4)
+            
+            print(f"✅ Blockchain loaded from {filepath}")
+            print(f"📊 Loaded {len(self.chain)} blocks and {len(self.mempool)} pending transactions")
+            
+            # Verify loaded chain integrity
+            if self.verify_chain():
+                print("🔍 Loaded blockchain is valid!")
+                return True
+            else:
+                print("⚠️ Warning: Loaded blockchain failed integrity check!")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Error loading blockchain: {e}")
+            return False
+
+    def get_blockchain_info(self):
+        """
+        Returns summary information about the blockchain.
+        
+        Returns:
+            dict: Blockchain statistics
+        """
+        total_transactions = sum(len(block.transactions) for block in self.chain)
+        
+        return {
+            'total_blocks': len(self.chain),
+            'total_transactions': total_transactions,
+            'pending_transactions': len(self.mempool),
+            'difficulty': self.difficulty,
+            'last_block_hash': self.last_block.current_hash if self.last_block else None,
+            'chain_valid': self.verify_chain() if len(self.chain) > 0 else True
+        }

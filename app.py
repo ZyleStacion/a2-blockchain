@@ -26,7 +26,10 @@ class BlockchainCLI:
         print("6. Edit Block (Demo)")
         print("7. Show Mempool")
         print("8. Modify Difficulty")
-        print("9. Exit")
+        print("9. Save Blockchain")      # New
+        print("10. Load Blockchain")     # New
+        print("11. Blockchain Info")     # New
+        print("12. Exit")
         print("="*50)
         
     def create_genesis_block(self):
@@ -122,11 +125,53 @@ class BlockchainCLI:
         except Exception as e:
             print(f"❌ Error modifying difficulty: {e}")
 
+    def save_blockchain(self):
+        """Save blockchain to file"""
+        try:
+            filename = input("Enter filename (default: blockchain.pkl): ").strip()
+            if not filename:
+                filename = "blockchain.pkl"
+            
+            if self.blockchain.save_blockchain(filename):
+                print("💾 Blockchain saved successfully!")
+            
+        except Exception as e:
+            print(f"❌ Error saving: {e}")
+
+    def load_blockchain(self):
+        """Load blockchain from file"""
+        try:
+            filename = input("Enter filename (default: blockchain.pkl): ").strip()
+            if not filename:
+                filename = "blockchain.pkl"
+            
+            if self.blockchain.load_blockchain(filename):
+                print("📂 Blockchain loaded successfully!")
+                # Show summary
+                info = self.blockchain.get_blockchain_info()
+                print(f"📊 {info['total_blocks']} blocks, {info['total_transactions']} transactions")
+            
+        except Exception as e:
+            print(f"❌ Error loading: {e}")
+
+    def show_blockchain_info(self):
+        """Display blockchain statistics"""
+        info = self.blockchain.get_blockchain_info()
+        print(f"\n📊 BLOCKCHAIN INFORMATION")
+        print("=" * 30)
+        print(f"Total Blocks: {info['total_blocks']}")
+        print(f"Total Transactions: {info['total_transactions']}")
+        print(f"Pending Transactions: {info['pending_transactions']}")
+        print(f"Difficulty: {info['difficulty']}")
+        print(f"Chain Valid: {'✅ Yes' if info['chain_valid'] else '❌ No'}")
+        if info['last_block_hash']:
+            print(f"Last Block Hash: {info['last_block_hash'][:16]}...")
+
     def run(self):
         while True:
             self.show_menu()
             try:
-                choice = input("\nEnter your choice (1-9): ").strip()
+                choice = input("\nEnter your choice (1-12): ").strip()
                 
                 match choice:
                     case '1':
@@ -146,10 +191,16 @@ class BlockchainCLI:
                     case '8':
                         self.modify_difficulty_menu()
                     case '9':
+                        self.save_blockchain()         # New
+                    case '10':
+                        self.load_blockchain()         # New
+                    case '11':
+                        self.show_blockchain_info()   # New
+                    case '12':
                         print("👋 Goodbye!")
                         sys.exit(0)
                     case _:
-                        print("❌ Invalid choice. Please enter 1-9.")
+                        print("❌ Invalid choice. Please enter 1-12.")
                         
             except KeyboardInterrupt:
                 print("\n👋 Goodbye!")
